@@ -1,7 +1,12 @@
 .PHONY = all
 all:
 	haxe build.hxml && \
-	neko run.n xml/index.xml doc/snipeapi-edit.txt && \
-	neko run.n xml/stats.xml doc/snipeapi-stats.txt && \
-	neko run.n xml/uniserver.xml doc/snipeapi-server.txt
+	echo "Processing index.xml" && \
+	neko run.n xml/index.xml doc/ && \
+	echo "Processing stats.xml" && \
+	neko run.n xml/stats.xml doc/ && \
+	echo "Processing uniserver.xml" && \
+	neko run.n xml/uniserver.xml doc/
+#	&& \
+#	vim +"helptags ~/.vim/doc/"
 

@@ -18,23 +18,29 @@ class Main
       var args = Sys.args();
       if (args.length < 2)
         {
-          Sys.println('Usage: neko run.n <input file> <output file>');
+          Sys.println('Usage: neko run.n <input file> <output directory>');
           return;
         }
       var inputName = args[0];
-      var outputName = args[1];
+      var outputDir = args[1];
 
       var str = sys.io.File.getContent(inputName);
-      var buf = new StringBuf();
-      buf.add(outputName + '\tFor Vim version 7.4\tLast change: 2015\n');
-      buf.add('*' + outputName + '*\n');
-
       var xml = Xml.parse(str);
       var root = xml.firstChild();
+
       for (cl in root.elements())
         {
+          var buf = new StringBuf();
+          var outputName = outputDir + cl.get('path') + '.txt';
+          buf.add(cl.get('path') + '.txt' + '\tFor Vim version 7.4\tLast change: 2015\n');
+          buf.add('*' + cl.get('path') + '.txt' + '*\n');
+
           buf.add(line);
-          buf.add('Class *' + cl.get('path') + '*\n\n');
+          buf.add('Class *' + cl.get('path') + '*\n');
+          var module = cl.get('module');
+          if (module != null)
+            buf.add('defined in |' + module + '|\n');
+          buf.add('\n');
 
           var hasExt = false;
           for (ext in cl.elementsNamed('extends'))
@@ -47,7 +53,7 @@ class Main
 
           for (doc in cl.elementsNamed('haxe_doc'))
             {
-              buf.add('' + doc.firstChild());
+              buf.add(convertDoc('' + doc.firstChild()));
               buf.add('\n\n');
             }
 
@@ -56,14 +62,25 @@ class Main
               if (Lambda.has([ 'meta', '__f', 'extends' ], field.nodeName ))
                 continue;
 
-              if(field.get('public') != "1" || field.get('override') == "1")
+              if (field.get('public') != "1" || field.get('override') == "1")
                 continue;
 
               buf.add('*' + cl.get('path') + '.' + field.nodeName + '*\n');
-              if (field.get('set') == 'method')
-                buf.add('function ');
+
+              // check if it's a function
+              var isFunc = false;
+              for (e in field.elementsNamed('f'))
+                {
+                  isFunc = true;
+                  break;
+                }
+
+//              if (field.get('set') == 'method')
+              if (isFunc)
+                buf.add('public function ');
+              else buf.add('public var ');
               buf.add(field.nodeName);
-              if (field.get('set') == 'method')
+              if (isFunc)
                 {
                   var f = field.firstElement();
                   var fieldNamesStr = f.get('a');
@@ -80,37 +97,47 @@ class Main
                   var fieldPaths = [];
 //                  Lib.print(f.get('a') + ' ' + f.get('v'));
                   for (type in f.elements())
-                    fieldPaths.push(type.get('path'));
+                    if (type.nodeName == 'd')
+                      fieldPaths.push('Dynamic');
+                    else fieldPaths.push(type.get('path'));
 //                    Lib.print(type.get('path'));
 
                   buf.add('(');
                   for (i in 0...fieldNames.length)
-                    buf.add(fieldNames[i] + ': ' + fieldPaths[i] +
-                      (fieldValues[i] != 'null' && fieldValues[i] != '' ? ' = ' + fieldValues[i] : '') +
+                    buf.add(fieldNames[i] + ': |' + fieldPaths[i] + '|' +
+                      ((i < fieldValues.length && fieldValues[i] != '') ?
+                        ' = ' + fieldValues[i] : '') +
                       (i < fieldNames.length - 1 ? ', ' : ''));
                   buf.add(')');
                   if (fieldPaths.length > fieldNames.length)
-                    buf.add(': ' + fieldPaths[fieldPaths.length - 1]);
+                    buf.add(': |' + fieldPaths[fieldPaths.length - 1] + '|');
                 }
 
+              // property
               else
                 {
-                  for (e in field.elementsNamed('c'))
-                    buf.add(': |' + e.get('path') + '|');
+                  for (e in field.elements())
+                    if (Lambda.has([ 'c', 't', 'x' ], e.nodeName))
+                      buf.add(': |' + e.get('path') + '|');
                 }
-              buf.add('\n\n');
+              buf.add(';\n\n');
               for (e in field.elementsNamed('haxe_doc'))
                 {
-                  buf.add(e.firstChild());
+                  buf.add(convertDoc('' + e.firstChild()));
                   buf.add('\n\n');
                 }
             }
-        }
 
-      buf.add('vim:fen:tw=78:et:ts=8:ft=help:norl:\n');
-      sys.io.File.saveContent(outputName, buf.toString());
+          buf.add('vim:fen:tw=78:et:ts=8:ft=help:norl:\n');
+          sys.io.File.saveContent(outputName, buf.toString());
+        }
     }
 
+  function convertDoc(txt: String): String
+    {
+//      txt = StringTools.replace(txt, '`', '|');
+      return txt;
+    }
 
   public static function main()
     {
