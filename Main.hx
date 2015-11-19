@@ -32,11 +32,12 @@ class Main
         {
           var buf = new StringBuf();
           var outputName = outputDir + cl.get('path') + '.txt';
-          buf.add(cl.get('path') + '.txt' + '\tFor Vim version 7.4\tLast change: 2015\n');
+          var date = DateTools.format(Date.now(), "%d.%m.%Y");
+          buf.add(cl.get('path') + '.txt' + '\tFor Vim version 7.4\tLast change: ' + date + '\n');
           buf.add('*' + cl.get('path') + '.txt' + '*\n');
 
           buf.add(line);
-          buf.add('Class *' + cl.get('path') + '*\n');
+          buf.add(cl.nodeName + ' *' + cl.get('path') + '*\n');
           var module = cl.get('module');
           if (module != null)
             buf.add('defined in |' + module + '|\n');
@@ -57,12 +58,43 @@ class Main
               buf.add('\n\n');
             }
 
-          for (field in cl.elements())
+          var elements = null;
+          if (cl.nodeName == 'class' || cl.nodeName == 'enum')
+            elements = cl.elements();
+          else if (cl.nodeName == 'abstract')
+            elements = cl.elements();
+          else if (cl.nodeName == 'typedef')
+            {
+              elements = cl.firstElement().elements();
+              if (elements == null)
+                elements = cl.elements();
+            }
+
+          for (field in elements)
             {
               if (Lambda.has([ 'meta', '__f', 'extends' ], field.nodeName ))
                 continue;
 
-              if (field.get('public') != "1" || field.get('override') == "1")
+              if (cl.nodeName != 'typedef')
+                if (field.get('public') != "1" ||
+                  field.get('override') == "1")
+                continue;
+
+              // meta tags
+              var doContinue = false;
+              for (meta in field.elementsNamed('meta'))
+                {
+                  var m = meta.firstElement();
+
+                  // dox:hide
+                  if (m.get('n') == ':dox')
+                    {
+                      var x = '' + m.firstElement().firstChild();
+                      if (x == 'hide')
+                        doContinue = true;
+                    }
+                }
+              if (doContinue)
                 continue;
 
               buf.add('*' + cl.get('path') + '.' + field.nodeName + '*\n');
