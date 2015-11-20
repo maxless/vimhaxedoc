@@ -75,13 +75,10 @@ class Main
               if (Lambda.has([ 'meta', '__f', 'extends' ], field.nodeName ))
                 continue;
 
-              if (cl.nodeName != 'typedef')
-                if (field.get('public') != "1" ||
-                  field.get('override') == "1")
-                continue;
-
               // meta tags
+              var isPublic = (field.get('public') == "1");
               var doContinue = false;
+              var doShow = false;
               for (meta in field.elementsNamed('meta'))
                 {
                   var m = meta.firstElement();
@@ -92,9 +89,15 @@ class Main
                       var x = '' + m.firstElement().firstChild();
                       if (x == 'hide')
                         doContinue = true;
+                      else doShow = true;
                     }
                 }
               if (doContinue)
+                continue;
+
+              if (cl.nodeName != 'typedef')
+                if ((!isPublic && !doShow)||
+                  field.get('override') == "1")
                 continue;
 
               buf.add('*' + cl.get('path') + '.' + field.nodeName + '*\n');
@@ -107,10 +110,17 @@ class Main
                   break;
                 }
 
-//              if (field.get('set') == 'method')
+              if (field.get('set') == 'null' && !isFunc)
+                buf.add('[read-only] ');
+              if (isPublic)
+                buf.add('public ');
+              if (field.get('static') == '1')
+                buf.add('static ');
+              if (field.get('set') == 'dynamic')
+                buf.add('dynamic ');
               if (isFunc)
-                buf.add('public function ');
-              else buf.add('public var ');
+                buf.add('function ');
+              else buf.add('var ');
               buf.add(field.nodeName);
               if (isFunc)
                 {
@@ -119,20 +129,24 @@ class Main
                   var fieldValuesStr = f.get('v');
 
                   var fieldNames = [];
-                  if (fieldNamesStr != null)
+                  if (fieldNamesStr != null && fieldNamesStr != '')
                     fieldNames = fieldNamesStr.split(':');
+//                  if (field.nodeName == 'getAmount')
+//                    trace(fieldNames + ' ' + fieldNames.length);
 
                   var fieldValues = [];
-                  if (fieldValuesStr != null)
+                  if (fieldValuesStr != null && fieldValuesStr != '')
                     fieldValues = fieldValuesStr.split(':');
+//                  if (field.nodeName == 'getAmount')
+//                    trace(fieldValues + ' ' + fieldValues.length);
 
                   var fieldPaths = [];
-//                  Lib.print(f.get('a') + ' ' + f.get('v'));
                   for (type in f.elements())
                     if (type.nodeName == 'd')
                       fieldPaths.push('Dynamic');
                     else fieldPaths.push(type.get('path'));
-//                    Lib.print(type.get('path'));
+//                  if (field.nodeName == 'getAmount')
+//                    trace(fieldPaths + ' ' + fieldPaths.length);
 
                   buf.add('(');
                   for (i in 0...fieldNames.length)
