@@ -79,6 +79,7 @@ class Main
               var isPublic = (field.get('public') == "1");
               var doContinue = false;
               var doShow = false;
+              var isOptional = false;
               for (meta in field.elementsNamed('meta'))
                 {
                   var m = meta.firstElement();
@@ -91,6 +92,10 @@ class Main
                         doContinue = true;
                       else doShow = true;
                     }
+
+                  // optional
+                  else if (m.get('n') == ':optional')
+                    isOptional = true;
                 }
               if (doContinue)
                 continue;
@@ -112,6 +117,9 @@ class Main
 
               if (field.get('set') == 'null' && !isFunc)
                 buf.add('[read-only] ');
+              if (isOptional)
+                buf.add('[optional] ');
+
               if (isPublic)
                 buf.add('public ');
               if (field.get('static') == '1')
