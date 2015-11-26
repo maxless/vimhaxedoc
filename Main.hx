@@ -30,32 +30,32 @@ class Main
 
       for (cl in root.elements())
         {
-          var buf = new StringBuf();
+          var bufClass = new StringBuf();
           var outputName = outputDir + cl.get('path') + '.txt';
           var date = DateTools.format(Date.now(), "%d.%m.%Y");
-          buf.add(cl.get('path') + '.txt' + '\tFor Vim version 7.4\tLast change: ' + date + '\n');
-          buf.add('*' + cl.get('path') + '.txt' + '*\n');
+          bufClass.add(cl.get('path') + '.txt' + '\tFor Vim version 7.4\tLast change: ' + date + '\n');
+          bufClass.add('*' + cl.get('path') + '.txt' + '*\n');
 
-          buf.add(line);
-          buf.add(cl.nodeName + ' *' + cl.get('path') + '*\n');
+          bufClass.add(line);
+          bufClass.add(cl.nodeName + ' *' + cl.get('path') + '*\n');
           var module = cl.get('module');
           if (module != null)
-            buf.add('defined in |' + module + '|\n');
-          buf.add('\n');
+            bufClass.add('defined in |' + module + '|\n');
+          bufClass.add('\n');
 
           var hasExt = false;
           for (ext in cl.elementsNamed('extends'))
             {
-              buf.add('extends: |' + ext.get('path') + '| ');
+              bufClass.add('extends: |' + ext.get('path') + '| ');
               hasExt = true;
             }
           if (hasExt)
-            buf.add('\n\n');
+            bufClass.add('\n\n');
 
           for (doc in cl.elementsNamed('haxe_doc'))
             {
-              buf.add(convertDoc('' + doc.firstChild()));
-              buf.add('\n\n');
+              bufClass.add(convertDoc('' + doc.firstChild()));
+              bufClass.add('\n\n');
             }
 
           var elements = null;
@@ -70,6 +70,8 @@ class Main
                 elements = cl.elements();
             }
 
+          var buf = new StringBuf();
+          var map = new Map<String, String>();
           for (field in elements)
             {
               if (Lambda.has([ 'meta', '__f', 'extends' ], field.nodeName ))
@@ -187,10 +189,33 @@ class Main
                   buf.add(convertDoc('' + e.firstChild()));
                   buf.add('\n\n');
                 }
+
+              map.set(field.nodeName, buf.toString());
+              buf = new StringBuf();
             }
 
-          buf.add('vim:fen:tw=78:et:ts=8:ft=help:norl:\n');
-          sys.io.File.saveContent(outputName, buf.toString());
+          // sort fields
+          var tmp = [];
+          for (k in map.keys())
+            if (k != 'new')
+              tmp.push(k);
+          tmp.sort(function (a: String, b: String): Int 
+            {
+              a = a.toLowerCase();
+              b = b.toLowerCase();
+
+              if (a < b) return -1;
+              if (a > b) return 1;
+              return 0;
+            });
+
+          if (map['new'] != null)
+            bufClass.add(map['new']);
+          for (k in tmp)
+            bufClass.add(map[k]);
+
+          bufClass.add('vim:fen:tw=78:et:ts=8:ft=help:norl:\n');
+          sys.io.File.saveContent(outputName, bufClass.toString());
         }
     }
 
