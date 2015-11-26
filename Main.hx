@@ -171,8 +171,15 @@ class Main
               else
                 {
                   for (e in field.elements())
-                    if (Lambda.has([ 'c', 't', 'x' ], e.nodeName))
-                      buf.add(': |' + e.get('path') + '|');
+                    if (e.nodeName == 'd')
+                      buf.add(': |Dynamic|');
+                    else if (Lambda.has([ 'c', 't', 'x', 'e' ], e.nodeName))
+                      {
+                        buf.add(': |' + e.get('path') + '|');
+                        for (tmp in e.elements())
+                          if (Lambda.has([ 'c', 't', 'x', 'e' ], tmp.nodeName))
+                            buf.add(' <|' + tmp.get('path') + '|>');
+                      }
                 }
               buf.add(';\n\n');
               for (e in field.elementsNamed('haxe_doc'))
