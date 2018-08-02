@@ -6,7 +6,9 @@ all:
 	echo "Processing stats.xml" && \
 	neko run.n xml/stats.xml doc/ && \
 	echo "Processing uniserver.xml" && \
-	neko run.n xml/uniserver.xml doc/
+	neko run.n xml/uniserver.xml doc/ && \
+	echo "Processing script.xml" && \
+	neko run.n xml/script.xml doc/
 #	&& \
 #	vim +"helptags ~/.vim/doc/"
 

@@ -82,23 +82,25 @@ class Main
               var doContinue = false;
               var doShow = false;
               var isOptional = false;
-              for (meta in field.elementsNamed('meta'))
-                {
-                  var m = meta.firstElement();
+              var meta = field.elementsNamed('meta').next();
+              if (meta != null)
+                for (m in meta.elements())
+                  {
+                    var metaName = m.get('n');
 
-                  // dox:hide
-                  if (m.get('n') == ':dox')
-                    {
-                      var x = '' + m.firstElement().firstChild();
-                      if (x == 'hide')
-                        doContinue = true;
-                      else doShow = true;
-                    }
+                    // dox:hide
+                    if (metaName == ':dox')
+                      {
+                        var x = '' + m.firstElement().firstChild();
+                        if (x == 'hide')
+                          doContinue = true;
+                        else doShow = true;
+                      }
 
-                  // optional
-                  else if (m.get('n') == ':optional')
-                    isOptional = true;
-                }
+                    // optional
+                    else if (metaName == ':optional')
+                      isOptional = true;
+                  }
               if (doContinue)
                 continue;
 
